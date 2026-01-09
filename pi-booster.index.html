@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi Team Booster - Maksimalkan Mining</title>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <style>
+        :root {
+            --pi-purple: #4a148c;
+            --pi-gold: #ffa000;
+            --bg-dark: #1a1a1a;
+        }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg-dark); 
+            color: white; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+        }
+        .header { background: var(--pi-purple); width: 100%; padding: 20px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .container { width: 90%; max-width: 400px; margin-top: 20px; }
+        
+        /* Card Timer */
+        .timer-card { 
+            background: #2d2d2d; border-radius: 20px; padding: 30px; 
+            text-align: center; border: 2px solid var(--pi-gold);
+            box-shadow: 0 0 20px rgba(255, 160, 0, 0.2);
+        }
+        #countdown { font-size: 3rem; font-weight: bold; color: var(--pi-gold); margin: 15px 0; }
+        
+        .btn-boost { 
+            background: var(--pi-gold); color: black; border: none; 
+            padding: 15px 30px; border-radius: 50px; font-weight: bold; 
+            font-size: 1rem; cursor: pointer; transition: 0.3s; width: 100%;
+        }
+        .btn-boost:disabled { background: #555; color: #888; cursor: not-allowed; }
+
+        /* Team Section */
+        .team-section { margin-top: 30px; background: #2d2d2d; border-radius: 15px; padding: 15px; }
+        .member-item { 
+            display: flex; justify-content: space-between; 
+            padding: 10px; border-bottom: 1px solid #444; 
+        }
+        .status-on { color: #00e676; font-size: 0.8rem; }
+        .status-off { color: #ff5252; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h2 style="margin:0;">Pi Team Booster</h2>
+    <div id="user-info">Menghubungkan ke Pi Network...</div>
+</div>
+
+<div class="container">
+    <div class="timer-card">
+        <h3>Sesi Mining Anda</h3>
+        <div id="countdown">24:00:00</div>
+        <p id="instruction">Klik tombol di bawah setelah Anda menekan petir di Aplikasi Pi</p>
+        <button id="boost-btn" class="btn-boost" onclick="startMiningSession()">SAYA SUDAH KLIK PETIR</button>
+    </div>
+
+    <div class="team-section">
+        <h4>Status Tim Referral</h4>
+        <div id="team-list">
+            <div class="member-item">
+                <span>@Pioneer_A</span>
+                <span class="status-on">● AKTIF</span>
+            </div>
+            <div class="member-item">
+                <span>@Pioneer_B</span>
+                <span class="status-off">● OFFLINE</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const Pi = window.Pi;
+    Pi.init({ version: "2.0" });
+
+    let timerInterval;
+    const boostBtn = document.getElementById('boost-btn');
+    const countdownDisplay = document.getElementById('countdown');
+
+    // 1. LOGIN PI SDK
+    async function auth() {
+        try {
+            const user = await Pi.authenticate(['username'], (p) => {});
+            document.getElementById('user-info').innerText = "Halo, @" + user.user.username;
+            checkExistingSession(); // Cek apakah sudah ada sesi yang berjalan
+        } catch (e) {
+            console.error(e);
+            document.getElementById('user-info').innerText = "Gagal terhubung.";
+        }
+    }
+
+    // 2. FUNGSI TIMER 24 JAM
+    function startMiningSession() {
+        const endTime = new Date().getTime() + (24 * 60 * 60 * 1000);
+        localStorage.setItem('pi_mining_end', endTime);
+        runTimer(endTime);
+        alert("Sesi Booster Dimulai! Jangan lupa kembali dalam 24 jam.");
+    }
+
+    function runTimer(endTime) {
+        boostBtn.disabled = true;
+        boostBtn.innerText = "SESI AKTIF";
+
+        timerInterval = setInterval(() => {
+            const now = new Date().getTime();
+            const distance = endTime - now;
+
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            countdownDisplay.innerHTML = 
+                (hours < 10 ? "0" : "") + hours + ":" + 
+                (minutes < 10 ? "0" : "") + minutes + ":" + 
+                (seconds < 10 ? "0" : "") + seconds;
+
+            if (distance < 0) {
+                clearInterval(timerInterval);
+                countdownDisplay.innerHTML = "24:00:00";
+                boostBtn.disabled = false;
+                boostBtn.innerText = "SAYA SUDAH KLIK PETIR";
+                alert("Waktunya klik petir lagi di aplikasi Pi!");
+            }
+        }, 1000);
+    }
+
+    function checkExistingSession() {
+        const savedEnd = localStorage.getItem('pi_mining_end');
+        if (savedEnd) {
+            const now = new Date().getTime();
+            if (savedEnd > now) {
+                runTimer(parseInt(savedEnd));
+            }
+        }
+    }
+
+    auth();
+</script>
+
+</body>
+</html>
